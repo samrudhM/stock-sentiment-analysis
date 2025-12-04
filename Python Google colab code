@@ -1,0 +1,236 @@
+import pandas as pd
+
+from google.colab import drive
+drive.mount("Fin_Cleaned")
+
+df = pd.read_csv("https://drive.google.com/uc?export=download&id=1IrcRnwTrt7OguQngDXyx0opFID-jNx1b" ,   encoding="ISO-8859-1")
+print(df.columns)
+
+
+def sentiment_to_label(sentiment):
+    if sentiment == 'Positive':
+        return 1
+    else:
+        return 0
+df['Label'] =  df['Sentiment'].apply(sentiment_to_label)
+
+
+df = df.drop('Sentiment', axis=1)
+
+cols = df.columns.tolist()
+
+date_index = cols.index('Date')
+label_col = cols.pop(cols.index('Label'))
+cols.insert(date_index + 1, label_col)
+
+df = df[cols]
+df.head()
+
+df.tail()
+train= df[df['Date']< '20220517']
+test= df[df['Date']> '20220516']
+
+data=train.iloc[:,2:5]
+data.replace("[^a-zA-Z]"," ",regex= True, inplace= True)
+
+list1= [i for i in range(3) ]
+new_Index=[str(i) for i in list1]
+data.columns= new_Index
+data.head(5)
+
+for index in new_Index:
+    data[index]=data[index].str.lower()
+    data.head(1)
+' '.join(str(x) for x in data.iloc[1,0:3])
+headlines=[]
+for row in range(0,len(data.index)):
+    headlines.append(' '.join(str(x) for x in data.iloc[row,0:3]))
+headlines[0]
+
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.ensemble import RandomForestClassifier
+
+countvector=CountVectorizer(ngram_range=(2,2) )
+traindataset=countvector.fit_transform(headlines)
+
+traindataset[0]
+
+randomclassifier=RandomForestClassifier(n_estimators=200,criterion='entropy')
+randomclassifier.fit(traindataset,train['Label'])
+
+test_transform=[]
+for row in range(0,len(test.index)):
+    test_transform.append(' '.join(str(x) for x in test.iloc[row, 2:5]))
+test_dataset = countvector.transform(test_transform)
+predictions = randomclassifier.predict(test_dataset)
+
+test.loc[78,:]
+
+predictions
+
+trades_executed = []
+
+for i, prediction in enumerate(predictions):
+    if prediction == 1:
+
+        trades_executed.append('buy')
+    elif prediction == 0:
+
+        trades_executed.append('sell')
+
+import matplotlib.pyplot as plt
+
+
+buy_trades = [trade for trade in trades_executed if trade == 'buy']
+sell_trades = [trade for trade in trades_executed if trade == 'sell']
+
+plt.figure(figsize=(5, 5))
+plt.bar(['Buys', 'Sells'], [len(buy_trades), len(sell_trades)], color=['green', 'red'])
+plt.title('Number of Trades Executed')
+plt.show()
+buy_trades = [trade for trade in trades_executed if trade == 'buy']
+sell_trades = [trade for trade in trades_executed if trade == 'sell']
+
+plt.figure(figsize=(5, 5))
+plt.bar(['Buys', 'Sells'], [len(buy_trades), len(sell_trades)], color=['green', 'red'])
+plt.title('Number of Trades Executed')
+plt.show()
+
+from sklearn.metrics import classification_report,confusion_matrix, accuracy_score
+
+matrix= confusion_matrix(test['Label'],predictions)
+print(matrix)
+score= accuracy_score(test['Label'],predictions)
+print(score)
+report= classification_report(test['Label'],predictions)
+print(report)
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+matrix = confusion_matrix(test['Label'], predictions)
+sns.heatmap(matrix, annot=True, fmt='d', cmap='Blues')
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.show()
+
+headlines
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.ensemble import RandomForestClassifier
+
+tfidfvector=TfidfVectorizer(ngram_range=(2,2) )
+traindataset=tfidfvector.fit_transform(headlines)
+
+randomclassifier=RandomForestClassifier(n_estimators=200,criterion='entropy')
+randomclassifier.fit(traindataset,train['Label'])
+
+test_transform=[]
+for row in range(0,len(test.index)):
+    test_transform.append(' '.join(str(x) for x in test.iloc[row, 2:5]))
+test_dataset = countvector.transform(test_transform)
+predictions = randomclassifier.predict(test_dataset)
+
+predictions
+
+trades_executed = []
+
+for i, prediction in enumerate(predictions):
+    if prediction == 1:
+
+        trades_executed.append('buy')
+    elif prediction == 0:
+
+        trades_executed.append('sell')
+
+buy_trades = [trade for trade in trades_executed if trade == 'buy']
+sell_trades = [trade for trade in trades_executed if trade == 'sell']
+
+plt.figure(figsize=(5, 5))
+plt.bar(['Buys', 'Sells'], [len(buy_trades), len(sell_trades)], color=['green', 'red'])
+plt.title('Number of Trades Executed')
+plt.show()
+from sklearn.metrics import classification_report,confusion_matrix, accuracy_score
+
+matrix= confusion_matrix(test['Label'],predictions)
+print(matrix)
+score= accuracy_score(test['Label'],predictions)
+print(score)
+report= classification_report(test['Label'],predictions)
+print(report)
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+matrix = confusion_matrix(test['Label'], predictions)
+sns.heatmap(matrix, annot=True, fmt='d', cmap='Blues')
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.show()
+
+from sklearn.naive_bayes import MultinomialNB
+
+naive= MultinomialNB()
+naive.fit(traindataset,train['Label'])
+
+test_transform=[]
+for row in range(0,len(test.index)):
+    test_transform.append(' '.join(str(x) for x in test.iloc[row, 2:5]))
+test_dataset = countvector.transform(test_transform)
+predictions = naive.predict(test_dataset)
+
+predictionstrades_executed = []
+
+for i, prediction in enumerate(predictions):
+    if prediction == 1:
+
+        trades_executed.append('buy')
+    elif prediction == 0:
+
+        trades_executed.append('sell')
+
+buy_trades = [trade for trade in trades_executed if trade == 'buy']
+sell_trades = [trade for trade in trades_executed if trade == 'sell']
+
+plt.figure(figsize=(6, 5))
+plt.bar(['Buys', 'Sells'], [len(buy_trades), len(sell_trades)], color=['green', 'red'])
+plt.title('Number of Trades Executed')
+plt.show()
+
+matrix= confusion_matrix(test['Label'],predictions)
+print(matrix)
+score= accuracy_score(test['Label'],predictions)
+print(score)
+report= classification_report(test['Label'],predictions)
+print(report)
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+matrix = confusion_matrix(test['Label'], predictions)
+sns.heatmap(matrix, annot=True, fmt='d', cmap='Blues')
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
